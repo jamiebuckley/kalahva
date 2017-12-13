@@ -46,7 +46,7 @@ public class InMemoryDataService implements DataService {
     game.setId(gameIdCounter.getAndIncrement());
     game.setCreated(LocalDateTime.now());
     game.setUpdated(LocalDateTime.now());
-    game.setPlayerOne(playerOneId.toString());
+    game.setPlayerOne(playerOneId);
     this.games.add(game);
     return game;
   }
