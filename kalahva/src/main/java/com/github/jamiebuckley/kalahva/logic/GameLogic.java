@@ -163,7 +163,10 @@ public class GameLogic {
       }
     }
 
-    game.setPlayerTurn(!game.getPlayerTurn());
+    //Free turn if last seed was on store
+    if (selectedPit.getType() != Pit.Type.STORE) {
+      game.setPlayerTurn(!game.getPlayerTurn());
+    }
   }
 
   private int getOppositePitIndex(int currentPit) {
