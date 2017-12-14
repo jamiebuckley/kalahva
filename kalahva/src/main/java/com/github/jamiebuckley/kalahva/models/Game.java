@@ -1,5 +1,7 @@
 package com.github.jamiebuckley.kalahva.models;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +10,10 @@ public class Game {
 
   public enum State {
     WAITING, PLAYING, FINISHED
+  }
+
+  public enum Winner {
+    ONE, TWO, DRAW
   }
 
   private Long id;
@@ -20,13 +26,14 @@ public class Game {
 
   private Long playerTwo;
 
-  private Long playerTurn;
+  //Java should have a bit type
+  private boolean playerTurn;
 
   private List<Pit> pits;
 
   private State state = State.WAITING;
 
-  private String winner;
+  private Winner winner;
 
   public Game() {
     pits = new ArrayList<>();
@@ -40,6 +47,7 @@ public class Game {
     this.id = id;
   }
 
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   public LocalDateTime getCreated() {
     return created;
   }
@@ -48,6 +56,7 @@ public class Game {
     this.created = created;
   }
 
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
   public LocalDateTime getUpdated() {
     return updated;
   }
@@ -72,11 +81,11 @@ public class Game {
     this.playerTwo = playerTwo;
   }
 
-  public Long getPlayerTurn() {
+  public boolean getPlayerTurn() {
     return playerTurn;
   }
 
-  public void setPlayerTurn(Long playerTurn) {
+  public void setPlayerTurn(boolean playerTurn) {
     this.playerTurn = playerTurn;
   }
 
@@ -96,11 +105,11 @@ public class Game {
     this.state = state;
   }
 
-  public String getWinner() {
+  public Winner getWinner() {
     return winner;
   }
 
-  public void setWinner(String winner) {
+  public void setWinner(Winner winner) {
     this.winner = winner;
   }
 }

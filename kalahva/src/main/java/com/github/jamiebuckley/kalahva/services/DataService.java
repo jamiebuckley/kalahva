@@ -18,7 +18,7 @@ public interface DataService {
 
   Game createGame(Long playerOneId);
 
-  Game updateGame(Game game) throws GameNotFoundException;
+  Optional<Game> updateGame(Game game);
 
   List<Game> getGames();
 

@@ -6,17 +6,17 @@ public class Pit {
     HOUSE, STORE
   }
 
-  private String owner;
+  private boolean owner;
 
   private int seeds;
 
   private Type type = Type.HOUSE;
 
-  public String getOwner() {
+  public boolean getOwner() {
     return owner;
   }
 
-  public void setOwner(String owner) {
+  public void setOwner(boolean owner) {
     this.owner = owner;
   }
 

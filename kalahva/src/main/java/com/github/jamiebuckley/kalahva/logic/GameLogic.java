@@ -3,16 +3,17 @@ package com.github.jamiebuckley.kalahva.logic;
 import com.github.jamiebuckley.kalahva.models.Game;
 import com.github.jamiebuckley.kalahva.models.Pit;
 import com.github.jamiebuckley.kalahva.util.ObjectUtils;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-
+@Service
 public class GameLogic {
 
-  private static int PLAYER_ONE = 0;
-  private static int PLAYER_TWO = 1;
+  private static boolean PLAYER_ONE = false;
+  private static boolean PLAYER_TWO = true;
 
   private static int PLAYER_ONE_STORE = 6;
   private static int PLAYER_TWO_STORE = 13;
@@ -31,7 +32,7 @@ public class GameLogic {
     }
   }
 
-  public void initialize(Game game, String playerOneId, String playerTwoId) {
+  public void initialize(Game game) {
     List<Pit> pits = new ArrayList<>();
     for (int i = 0; i < NUMBER_OF_PITS; i++) {
       Pit pit = new Pit();
@@ -39,16 +40,53 @@ public class GameLogic {
         pit.setType(Pit.Type.STORE);
       }
 
-      String owner = (i <= PLAYER_ONE_STORE) ? playerOneId : playerTwoId;
+      boolean owner = (i <= PLAYER_ONE_STORE);
       pit.setOwner(owner);
       pit.setSeeds(NUMBER_OF_SEEDS);
+      pits.add(pit);
     }
     game.setPits(pits);
     game.setState(Game.State.PLAYING);
   }
 
+  public void updateGameState(Game game) {
+    if (game.getState() == Game.State.FINISHED) {
+      //don't update finished games
+      return;
+    }
+
+    //got both players?
+    if (game.getPlayerOne() != null && game.getPlayerTwo() != null) {
+      //if waiting - start playing
+      if (game.getState() == Game.State.WAITING) {
+        initialize(game);
+      }
+
+      int numberOfSeedsInPlay = game.getPits()
+          .stream()
+          .filter(p -> p.getType() == Pit.Type.HOUSE)
+          .map(Pit::getSeeds)
+          .mapToInt(Integer::intValue).sum();
+
+      if (numberOfSeedsInPlay == 0) {
+        game.setState(Game.State.FINISHED);
+        int playerOneSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
+        int playerTwoSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
+        if (playerOneSeeds == playerTwoSeeds) {
+          game.setWinner(Game.Winner.DRAW);
+        } else {
+          game.setWinner(playerOneSeeds > playerTwoSeeds ? Game.Winner.ONE : Game.Winner.TWO);
+        }
+      }
+    }
+    else {
+      //wait for a player
+      game.setState(Game.State.WAITING);
+    }
+  }
+
   private void checkLegalMove(Game game, Long playerId, int index) throws GameException {
-    int playerIndex = getPlayerIndex(game, playerId);
+    boolean playerIndex = getPlayerIndex(game, playerId);
     if (index == PLAYER_ONE_STORE || index == PLAYER_TWO_STORE) {
       throw new IllegalGameMoveException("A player cannot select a store");
     }
@@ -64,7 +102,7 @@ public class GameLogic {
   }
 
   private void applyPlay(Game game, Long playerId, int index) {
-    int playerIndex = getPlayerIndex(game, playerId);
+    boolean playerIndex = getPlayerIndex(game, playerId);
 
     Pit selectedPit = game.getPits().get(index);
 
@@ -85,8 +123,28 @@ public class GameLogic {
 
       //remove one seed and move to the next pit
       seedsInHand--;
-      currentPit++;
+      if (seedsInHand > 0) {
+        currentPit++;
+      }
     }
+
+    if (selectedPit.getSeeds() == 1) {
+      int oppositePitIndex = getOppositePitIndex(currentPit);
+      Pit oppositePit = game.getPits().get(oppositePitIndex);
+      if (oppositePit.getType() != Pit.Type.STORE) {
+        int oppositePitSeeds = oppositePit.getSeeds();
+        oppositePit.setSeeds(0);
+        int winningStoreIndex = (playerIndex) ? PLAYER_ONE_STORE : PLAYER_TWO_STORE;
+        Pit winnersPit = game.getPits().get(winningStoreIndex);
+        winnersPit.setSeeds(winnersPit.getSeeds() + oppositePitSeeds);
+      }
+    }
+
+
+  }
+
+  private int getOppositePitIndex(int currentPit) {
+    return PLAYER_ONE_STORE - (currentPit - PLAYER_ONE_STORE);
   }
 
   public Game makePlay(Game game, Long playerId, int index) throws GameException {
@@ -101,9 +159,9 @@ public class GameLogic {
    * Returns the index of the player in the current game
    * @param game The game to test the player index of
    * @param playerId The player ID to test
-   * @return The index of the player: 0 or 1
+   * @return false (0) for playerOne, true (1) for playerTwo
    */
-  private int getPlayerIndex(Game game, Long playerId) {
-    return asList(game.getPlayerOne(), game.getPlayerTwo()).indexOf(playerId);
+  private boolean getPlayerIndex(Game game, Long playerId) {
+    return !game.getPlayerOne().equals(playerId);
   }
 }

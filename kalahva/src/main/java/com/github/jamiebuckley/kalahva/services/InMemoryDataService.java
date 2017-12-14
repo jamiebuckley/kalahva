@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Effectively an in-memory data store of all active games
@@ -52,17 +53,16 @@ public class InMemoryDataService implements DataService {
   }
 
   @Override
-  public Game updateGame(Game game) throws GameNotFoundException {
-    Game existingGame = getGame(game.getId())
-        .orElseThrow(() -> new GameNotFoundException("Game with ID: " + game.getId() + " was not found"));
-
-    existingGame.setUpdated(LocalDateTime.now());
-    existingGame.setPits(game.getPits());
-    existingGame.setPlayerOne(game.getPlayerOne());
-    existingGame.setPlayerTwo(game.getPlayerTwo());
-    existingGame.setPlayerTurn(game.getPlayerTurn());
-    existingGame.setState(game.getState());
-    return existingGame;
+  public Optional<Game> updateGame(Game game) {
+    int index = games.stream()
+        .map(Game::getId)
+        .collect(Collectors.toList())
+        .indexOf(game.getId());
+    if (index == -1) {
+      return Optional.empty();
+    }
+    games.set(index, game);
+    return Optional.of(game);
   }
 
   @Override
