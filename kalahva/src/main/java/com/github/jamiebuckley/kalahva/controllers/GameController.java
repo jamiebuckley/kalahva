@@ -18,6 +18,27 @@ public class GameController {
 
   private final GameLogic gameLogic;
 
+
+  /**
+   * Simple class to store error responses
+   */
+  public static class GameErrorResponse {
+
+    private String error;
+
+    public GameErrorResponse(String error) {
+      this.error = error;
+    }
+
+    public String getError() {
+      return error;
+    }
+
+    public void setError(String error) {
+      this.error = error;
+    }
+  }
+
   @Autowired
   public GameController(DataService dataService, GameLogic gameLogic) {
     this.dataService = dataService;
@@ -40,7 +61,7 @@ public class GameController {
   }
 
   @RequestMapping(path = "/game/{gameId}/player/{playerIndex}/{playerId}", method = RequestMethod.PUT)
-  public ResponseEntity<?> joinGame(@PathVariable Long gameId, @PathVariable Long playerIndex, @PathVariable Long playerId) {
+  public ResponseEntity<?> joinGame(@PathVariable Long gameId, @PathVariable int playerIndex, @PathVariable Long playerId) {
     Optional<Game> maybeGame = dataService.getGame(gameId);
     if (!maybeGame.isPresent()) {
       return ResponseEntity.notFound().build();
@@ -73,9 +94,13 @@ public class GameController {
 
   @RequestMapping("/game/{gameId}/state")
   public ResponseEntity<?> getGameState(@PathVariable Long gameId) {
-    return dataService.getGame(gameId)
-        .map(g -> ResponseEntity.ok(g.getState()))
-        .orElse(ResponseEntity.notFound().build());
+    Optional<ResponseEntity<Game.State>> response =
+        dataService.getGame(gameId).map(Game::getState)
+            .map(ResponseEntity::ok);
+    if (response.isPresent()) {
+      return response.get();
+    }
+    return error("the game was not found", HttpStatus.NOT_FOUND);
   }
 
   @RequestMapping(path = "/game/{gameId}/{playerId}/play/{index}", method = RequestMethod.POST)
@@ -83,13 +108,18 @@ public class GameController {
     return dataService.getGame(gameId)
         .map(g -> {
           try {
-            return ResponseEntity.ok(gameLogic.makePlay(g, playerId, index));
+            Game gameAfterPlay = gameLogic.makePlay(g, playerId, index);
+            dataService.updateGame(gameAfterPlay);
+            return ResponseEntity.ok(gameAfterPlay);
           } catch (GameLogic.GameException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return error(e.getMessage(), HttpStatus.BAD_REQUEST);
           }
         })
-        .orElse(ResponseEntity.notFound().build());
+        .orElse(error("The game was not found", HttpStatus.NOT_FOUND));
   }
 
 
+  private ResponseEntity<GameErrorResponse> error(String message, HttpStatus httpStatus) {
+    return new ResponseEntity<>(new GameErrorResponse(message), httpStatus);
+  }
 }

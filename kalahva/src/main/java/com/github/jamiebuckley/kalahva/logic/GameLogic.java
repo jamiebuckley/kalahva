@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,17 +33,32 @@ public class GameLogic {
     }
   }
 
+  /**
+   * Checks if either players have no seeds in their stores
+   */
+  private boolean hasGameFinished(Game game) {
+    Function<Boolean, Integer> pitsForPlayer = (player) -> game.getPits()
+        .stream()
+        .filter(p -> p.getOwner() == player)
+        .filter(p -> p.getType() == Pit.Type.HOUSE)
+        .map(Pit::getSeeds)
+        .mapToInt(Integer::intValue).sum();
+    return pitsForPlayer.apply(true) == 0 || pitsForPlayer.apply(false) == 0;
+  }
+
   public void initialize(Game game) {
     List<Pit> pits = new ArrayList<>();
     for (int i = 0; i < NUMBER_OF_PITS; i++) {
       Pit pit = new Pit();
-      if (i == PLAYER_ONE_STORE || i == PLAYER_TWO_STORE) {
-        pit.setType(Pit.Type.STORE);
-      }
 
       boolean owner = (i <= PLAYER_ONE_STORE);
       pit.setOwner(owner);
-      pit.setSeeds(NUMBER_OF_SEEDS);
+
+      if (i == PLAYER_ONE_STORE || i == PLAYER_TWO_STORE) {
+        pit.setType(Pit.Type.STORE);
+      } else {
+        pit.setSeeds(NUMBER_OF_SEEDS);
+      }
       pits.add(pit);
     }
     game.setPits(pits);
@@ -62,13 +78,7 @@ public class GameLogic {
         initialize(game);
       }
 
-      int numberOfSeedsInPlay = game.getPits()
-          .stream()
-          .filter(p -> p.getType() == Pit.Type.HOUSE)
-          .map(Pit::getSeeds)
-          .mapToInt(Integer::intValue).sum();
-
-      if (numberOfSeedsInPlay == 0) {
+      if (hasGameFinished(game)) {
         game.setState(Game.State.FINISHED);
         int playerOneSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
         int playerTwoSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
@@ -87,6 +97,9 @@ public class GameLogic {
 
   private void checkLegalMove(Game game, Long playerId, int index) throws GameException {
     boolean playerIndex = getPlayerIndex(game, playerId);
+    if (game.getPlayerTurn() != playerIndex) {
+      throw new IllegalGameMoveException("A player cannot move outside their turn");
+    }
     if (index == PLAYER_ONE_STORE || index == PLAYER_TWO_STORE) {
       throw new IllegalGameMoveException("A player cannot select a store");
     }
@@ -95,6 +108,9 @@ public class GameLogic {
     }
     if (game.getPits().size() < index || index < 0) {
       throw new IllegalGameMoveException("Cannot select an index out of range of the game board");
+    }
+    if (game.getPits().get(index).getType() == Pit.Type.STORE) {
+      throw new IllegalGameMoveException("Cannot play from a store");
     }
     if (game.getPits().get(index).getSeeds() == 0) {
       throw new IllegalGameMoveException("Must select a house with seeds");
@@ -111,8 +127,12 @@ public class GameLogic {
     selectedPit.setSeeds(0);
 
     int seedsInHand = selectedSeeds;
-    int currentPit = index;
+    int currentPit = index + 1;
     while (seedsInHand > 0) {
+      //go round the board
+      if (currentPit > PLAYER_TWO_STORE) {
+        currentPit = 0;
+      }
       selectedPit = game.getPits().get(currentPit);
 
       //no seeds on opponent's store
@@ -128,7 +148,10 @@ public class GameLogic {
       }
     }
 
-    if (selectedPit.getSeeds() == 1) {
+    //Take opponents seed if pit was empty, belongs to player, and wasn't a store
+    if (selectedPit.getSeeds() == 1
+        && selectedPit.getType() != Pit.Type.STORE
+        && selectedPit.getOwner() == playerIndex) {
       int oppositePitIndex = getOppositePitIndex(currentPit);
       Pit oppositePit = game.getPits().get(oppositePitIndex);
       if (oppositePit.getType() != Pit.Type.STORE) {
@@ -140,7 +163,7 @@ public class GameLogic {
       }
     }
 
-
+    game.setPlayerTurn(!game.getPlayerTurn());
   }
 
   private int getOppositePitIndex(int currentPit) {
