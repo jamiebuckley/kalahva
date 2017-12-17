@@ -81,7 +81,7 @@ public class GameLogic {
       if (hasGameFinished(game)) {
         game.setState(Game.State.FINISHED);
         int playerOneSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
-        int playerTwoSeeds = game.getPits().get(PLAYER_ONE_STORE).getSeeds();
+        int playerTwoSeeds = game.getPits().get(PLAYER_TWO_STORE).getSeeds();
         if (playerOneSeeds == playerTwoSeeds) {
           game.setWinner(Game.Winner.DRAW);
         } else {
@@ -178,6 +178,7 @@ public class GameLogic {
     ObjectUtils.notNullOrThrow(playerId, "PlayerId must not be null");
     checkLegalMove(game, playerId, index);
     applyPlay(game, playerId, index);
+    updateGameState(game);
     return game;
   }
 

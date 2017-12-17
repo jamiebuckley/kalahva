@@ -70,7 +70,27 @@ public class GameLogicTest {
 
         Game gameAfterPlayTwo = gameLogic.makePlay(game, 1L, 7);
         assertEquals(1, 1);
-        assertEquals(0, game.getPits().get(4).getSeeds());
-        assertEquals(6, game.getPits().get(GameLogic.PLAYER_TWO_STORE).getSeeds());
+        assertEquals(0, gameAfterPlayTwo.getPits().get(4).getSeeds());
+        assertEquals(6, gameAfterPlayTwo.getPits().get(GameLogic.PLAYER_TWO_STORE).getSeeds());
+    }
+
+    @Test
+    public void testWinningCondition() throws GameLogic.GameException {
+        GameLogic gameLogic = new GameLogic();
+        Game game = new Game();
+        game.setPlayerOne(0L);
+        game.setPlayerTwo(1L);
+
+        gameLogic.initialize(game);
+        game.getPits().stream().forEach(p -> p.setSeeds(0));
+        game.getPits().get(GameLogic.PLAYER_TWO_STORE).setSeeds(10);
+        game.getPits().get(GameLogic.PLAYER_ONE_STORE).setSeeds(5);
+        game.getPits().get(0).setSeeds(1);
+        game.getPits().get(11).setSeeds(1);
+        game.setPlayerTurn(true);
+
+        gameLogic.makePlay(game, 1L, 11);
+        assertEquals(Game.State.FINISHED, game.getState());
+        assertEquals(Game.Winner.TWO, game.getWinner());
     }
 }
