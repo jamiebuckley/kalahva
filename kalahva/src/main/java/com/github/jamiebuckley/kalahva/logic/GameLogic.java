@@ -51,7 +51,7 @@ public class GameLogic {
     for (int i = 0; i < NUMBER_OF_PITS; i++) {
       Pit pit = new Pit();
 
-      boolean owner = (i <= PLAYER_ONE_STORE);
+      boolean owner = (i >= PLAYER_ONE_STORE);
       pit.setOwner(owner);
 
       if (i == PLAYER_ONE_STORE || i == PLAYER_TWO_STORE) {
@@ -157,7 +157,7 @@ public class GameLogic {
       if (oppositePit.getType() != Pit.Type.STORE) {
         int oppositePitSeeds = oppositePit.getSeeds();
         oppositePit.setSeeds(0);
-        int winningStoreIndex = (playerIndex) ? PLAYER_ONE_STORE : PLAYER_TWO_STORE;
+        int winningStoreIndex = (playerIndex) ?  PLAYER_TWO_STORE : PLAYER_ONE_STORE;
         Pit winnersPit = game.getPits().get(winningStoreIndex);
         winnersPit.setSeeds(winnersPit.getSeeds() + oppositePitSeeds);
       }
