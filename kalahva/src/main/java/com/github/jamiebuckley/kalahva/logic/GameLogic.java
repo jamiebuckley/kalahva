@@ -13,13 +13,13 @@ import java.util.stream.Collectors;
 @Service
 public class GameLogic {
 
-  private static boolean PLAYER_ONE = false;
-  private static boolean PLAYER_TWO = true;
+  public static boolean PLAYER_ONE = false;
+  public static boolean PLAYER_TWO = true;
 
-  private static int PLAYER_ONE_STORE = 6;
-  private static int PLAYER_TWO_STORE = 13;
-  private static int NUMBER_OF_PITS = 14;
-  private static int NUMBER_OF_SEEDS = 6;
+  public static int PLAYER_ONE_STORE = 6;
+  public static int PLAYER_TWO_STORE = 13;
+  public static int NUMBER_OF_PITS = 14;
+  public static int NUMBER_OF_SEEDS = 6;
 
   public class GameException extends Exception {
     public GameException(String message) {
