@@ -31,10 +31,10 @@ curl http://localhost:8080/player
 #0
 curl http://localhost:8080/player
 #1
-curl -XPOST http://localhost:8080/game?playerId=0 | jq
-curl -XPOST http://localhost:8080/game?playerId=0 | jq
-curl -XPUT http://localhost:8080/game/0/player/1/1 | jq
-curl -XPOST http://localhost:8080/game/0/0/play/0 | jq
+curl -XPOST http://localhost:8080/game?playerId=0
+curl -XPOST http://localhost:8080/game?playerId=0
+curl -XPUT http://localhost:8080/game/0/player/1/1
+curl -XPOST http://localhost:8080/game/0/0/play/0
 
 
 ```
